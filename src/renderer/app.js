@@ -1,515 +1,363 @@
 /**
- * SmartLiving Control - Frontend Application
- * Handles UI interactions and SmartThings API communication via IPC
+ * SmartLiving Control - Renderer App
+ * Main application logic for the UI
  */
 
-// ========== State ==========
-const state = {
-  devices: [],
-  scenes: [],
-  currentScreen: 'devices',
-  loading: false
-};
-
-// ========== DOM Elements ==========
-const $ = (selector) => document.querySelector(selector);
-const $$ = (selector) => document.querySelectorAll(selector);
-
-const elements = {
-  // Screens
-  setupScreen: $('#setup-screen'),
-  devicesScreen: $('#devices-screen'),
-  settingsScreen: $('#settings-screen'),
-  
-  // Tabs
-  devicesTab: $('#devices-tab'),
-  scenesTab: $('#scenes-tab'),
-  tabs: $$('.tab'),
-  
-  // Lists
-  devicesList: $('#devices-list'),
-  scenesList: $('#scenes-list'),
-  devicesLoading: $('#devices-loading'),
-  devicesEmpty: $('#devices-empty'),
-  
-  // Settings
-  tokenInput: $('#token-input'),
-  saveTokenBtn: $('#save-token'),
-  startupCheckbox: $('#startup-checkbox'),
-  refreshDevicesBtn: $('#refresh-devices'),
-  settingsBtn: $('#settings-btn'),
-  settingsBack: $('#settings-back'),
-  tokenLink: $('#token-link'),
-  
-  // Setup
-  setupBtn: $('#setup-btn')
-};
-
-// ========== Initialization ==========
-async function init() {
-  // Check for token
-  const token = await window.smartliving.getToken();
-  
-  if (!token) {
-    showScreen('setup');
-  } else {
-    showScreen('devices');
-    loadDevices();
+class SmartLivingApp {
+  constructor() {
+    this.devices = [];
+    this.scenes = [];
+    this.currentScreen = 'devices';
+    
+    this.init();
   }
-  
-  // Set up event listeners
-  setupEventListeners();
-  
-  // Listen for navigation from main process
-  window.smartliving.onNavigate((page) => {
-    if (page === 'settings') {
-      showScreen('settings');
+
+  async init() {
+    this.bindElements();
+    this.bindEvents();
+    this.setupNavigation();
+    
+    // Check if token exists
+    const token = await window.smartliving.getToken();
+    if (token) {
+      this.showScreen('devices');
+      this.loadDevices();
+      this.loadScenes();
+    } else {
+      this.showScreen('setup');
     }
-  });
-}
-
-// ========== Event Listeners ==========
-function setupEventListeners() {
-  // Settings button
-  elements.settingsBtn.addEventListener('click', () => showScreen('settings'));
-  elements.settingsBack.addEventListener('click', () => showScreen('devices'));
-  
-  // Setup button
-  elements.setupBtn.addEventListener('click', () => showScreen('settings'));
-  
-  // Tab switching
-  elements.tabs.forEach(tab => {
-    tab.addEventListener('click', () => switchTab(tab.dataset.tab));
-  });
-  
-  // Save token
-  elements.saveTokenBtn.addEventListener('click', saveToken);
-  elements.tokenInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') saveToken();
-  });
-  
-  // Refresh devices
-  elements.refreshDevicesBtn.addEventListener('click', loadDevices);
-  
-  // Token link - open external using preload API
-  elements.tokenLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    window.smartliving.openExternal('https://account.smartthings.com/tokens');
-  });
-  
-  // Load existing settings
-  loadSettings();
-}
-
-// ========== Screen Navigation ==========
-function showScreen(screen) {
-  state.currentScreen = screen;
-  
-  // Hide all screens
-  elements.setupScreen.classList.add('hidden');
-  elements.devicesScreen.classList.add('hidden');
-  elements.settingsScreen.classList.add('hidden');
-  
-  // Show target screen
-  switch (screen) {
-    case 'setup':
-      elements.setupScreen.classList.remove('hidden');
-      break;
-    case 'devices':
-      elements.devicesScreen.classList.remove('hidden');
-      break;
-    case 'settings':
-      elements.settingsScreen.classList.remove('hidden');
-      break;
   }
-}
 
-function switchTab(tab) {
-  // Update active tab
-  elements.tabs.forEach(t => {
-    t.classList.toggle('tab--active', t.dataset.tab === tab);
-  });
-  
-  // Show/hide content
-  elements.devicesTab.classList.toggle('hidden', tab !== 'devices');
-  elements.scenesTab.classList.toggle('hidden', tab !== 'scenes');
-  
-  // Load scenes if needed
-  if (tab === 'scenes' && state.scenes.length === 0) {
-    loadScenes();
-  }
-}
-
-// ========== Settings ==========
-async function loadSettings() {
-  const settings = await window.smartliving.getSettings();
-  elements.tokenInput.value = settings.smartthingsToken || '';
-  elements.startupCheckbox.checked = settings.showOnStartup || false;
-  
-  // Startup checkbox handler
-  elements.startupCheckbox.addEventListener('change', (e) => {
-    window.smartliving.setSetting('showOnStartup', e.target.checked);
-  });
-}
-
-async function saveToken() {
-  const token = elements.tokenInput.value.trim();
-  if (!token) {
-    showToast('Please enter a token', 'error');
-    return;
-  }
-  
-  await window.smartliving.setToken(token);
-  showToast('Token saved!', 'success');
-  showScreen('devices');
-  loadDevices();
-}
-
-// ========== Devices ==========
-async function loadDevices() {
-  elements.devicesLoading.classList.remove('hidden');
-  elements.devicesList.innerHTML = '';
-  elements.devicesEmpty.classList.add('hidden');
-  
-  try {
-    const devices = await window.smartliving.getDevices();
-    state.devices = devices;
+  bindElements() {
+    // Screens
+    this.setupScreen = document.getElementById('setup-screen');
+    this.devicesScreen = document.getElementById('devices-screen');
+    this.settingsScreen = document.getElementById('settings-screen');
     
-    elements.devicesLoading.classList.add('hidden');
+    // Buttons
+    this.settingsBtn = document.getElementById('settings-btn');
+    this.setupBtn = document.getElementById('setup-btn');
+    this.settingsBack = document.getElementById('settings-back');
+    this.saveTokenBtn = document.getElementById('save-token');
+    this.refreshBtn = document.getElementById('refresh-devices');
     
-    if (devices.length === 0) {
-      elements.devicesEmpty.classList.remove('hidden');
+    // Inputs
+    this.tokenInput = document.getElementById('token-input');
+    this.startupCheckbox = document.getElementById('startup-checkbox');
+    
+    // Lists
+    this.devicesList = document.getElementById('devices-list');
+    this.scenesList = document.getElementById('scenes-list');
+    this.devicesLoading = document.getElementById('devices-loading');
+    this.devicesEmpty = document.getElementById('devices-empty');
+    
+    // Tabs
+    this.tabs = document.querySelectorAll('.tab');
+    this.devicesTab = document.getElementById('devices-tab');
+    this.scenesTab = document.getElementById('scenes-tab');
+    
+    // Link
+    this.tokenLink = document.getElementById('token-link');
+  }
+
+  bindEvents() {
+    // Navigation
+    this.settingsBtn.addEventListener('click', () => this.showScreen('settings'));
+    this.settingsBack.addEventListener('click', () => this.showScreen('devices'));
+    this.setupBtn.addEventListener('click', () => this.showScreen('settings'));
+    
+    // Token
+    this.saveTokenBtn.addEventListener('click', () => this.saveToken());
+    this.tokenInput.addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') this.saveToken();
+    });
+    
+    // Settings
+    this.startupCheckbox.addEventListener('change', (e) => {
+      window.smartliving.setSetting('showOnStartup', e.target.checked);
+    });
+    
+    // Refresh
+    this.refreshBtn.addEventListener('click', () => {
+      this.loadDevices();
+      this.loadScenes();
+    });
+    
+    // Tabs
+    this.tabs.forEach(tab => {
+      tab.addEventListener('click', () => this.switchTab(tab.dataset.tab));
+    });
+    
+    // External link
+    this.tokenLink.addEventListener('click', (e) => {
+      e.preventDefault();
+      window.smartliving.openExternal('https://account.smartthings.com/tokens');
+    });
+  }
+
+  setupNavigation() {
+    // Listen for navigation events from main process
+    window.smartliving.onNavigate((page) => {
+      this.showScreen(page);
+    });
+    
+    // Listen for quick actions from tray
+    window.smartliving.onQuickAction((deviceId) => {
+      // Find device and toggle it
+      const device = this.devices.find(d => d.deviceId === deviceId);
+      if (device) {
+        const isOn = device.status?.components?.main?.switch?.switch?.value === 'on';
+        this.toggleDevice(deviceId, !isOn);
+      }
+    });
+  }
+
+  showScreen(screen) {
+    this.currentScreen = screen;
+    
+    // Hide all screens
+    this.setupScreen.classList.add('hidden');
+    this.devicesScreen.classList.add('hidden');
+    this.settingsScreen.classList.add('hidden');
+    
+    // Show requested screen
+    switch (screen) {
+      case 'setup':
+        this.setupScreen.classList.remove('hidden');
+        break;
+      case 'devices':
+        this.devicesScreen.classList.remove('hidden');
+        break;
+      case 'settings':
+        this.settingsScreen.classList.remove('hidden');
+        this.loadSettings();
+        break;
+    }
+  }
+
+  switchTab(tab) {
+    this.tabs.forEach(t => t.classList.remove('tab--active'));
+    document.querySelector(`[data-tab="${tab}"]`).classList.add('tab--active');
+    
+    this.devicesTab.classList.add('hidden');
+    this.scenesTab.classList.add('hidden');
+    
+    if (tab === 'devices') {
+      this.devicesTab.classList.remove('hidden');
+    } else {
+      this.scenesTab.classList.remove('hidden');
+    }
+  }
+
+  async loadSettings() {
+    const token = await window.smartliving.getToken();
+    this.tokenInput.value = token || '';
+    
+    const settings = await window.smartliving.getSettings();
+    this.startupCheckbox.checked = settings.showOnStartup || false;
+  }
+
+  async saveToken() {
+    const token = this.tokenInput.value.trim();
+    if (!token) {
+      this.showError('Please enter a valid token');
       return;
     }
     
-    // Render devices
-    for (const device of devices) {
-      const status = await window.smartliving.getDeviceStatus(device.deviceId);
-      renderDevice(device, status);
-    }
-  } catch (error) {
-    elements.devicesLoading.classList.add('hidden');
-    console.error('Failed to load devices:', error);
-    showToast('Failed to load devices', 'error');
+    await window.smartliving.setToken(token);
+    this.showScreen('devices');
+    this.loadDevices();
+    this.loadScenes();
   }
-}
 
-function renderDevice(device, status) {
-  const deviceType = getDeviceType(device);
-  const deviceStatus = deviceType.getStatus(status);
-  
-  const card = document.createElement('div');
-  card.className = 'device-card';
-  card.dataset.deviceId = device.deviceId;
-  
-  let controlsHTML = '';
-  
-  // Add toggle control for switches
-  if (deviceType.controls.includes('toggle')) {
-    const isOn = deviceStatus.isOn || deviceStatus.isLocked;
-    controlsHTML += `
-      <button class="toggle ${isOn ? 'toggle--on' : ''}" 
-              data-device-id="${device.deviceId}"
-              data-capability="${deviceType.controls.includes('lock') ? 'lock' : 'switch'}"
-              aria-label="Toggle"></button>
+  async loadDevices() {
+    try {
+      this.devicesList.innerHTML = '';
+      this.devicesLoading.classList.remove('hidden');
+      this.devicesEmpty.classList.add('hidden');
+      
+      this.devices = await window.smartliving.getDevices();
+      
+      this.devicesLoading.classList.add('hidden');
+      
+      if (this.devices.length === 0) {
+        this.devicesEmpty.classList.remove('hidden');
+        return;
+      }
+      
+      // Get status for each device
+      for (const device of this.devices) {
+        try {
+          device.status = await window.smartliving.getDeviceStatus(device.deviceId);
+        } catch (e) {
+          device.status = null;
+        }
+      }
+      
+      this.renderDevices();
+    } catch (error) {
+      console.error('Failed to load devices:', error);
+      this.devicesLoading.classList.add('hidden');
+      this.showError('Failed to load devices. Check your token.');
+    }
+  }
+
+  renderDevices() {
+    this.devicesList.innerHTML = '';
+    
+    for (const device of this.devices) {
+      const card = this.createDeviceCard(device);
+      this.devicesList.appendChild(card);
+    }
+  }
+
+  createDeviceCard(device) {
+    const card = document.createElement('div');
+    card.className = 'device-card';
+    card.dataset.deviceId = device.deviceId;
+    
+    // Determine device state
+    const isOn = device.status?.components?.main?.switch?.switch?.value === 'on';
+    const level = device.status?.components?.main?.switchLevel?.level?.value;
+    const hasSwitch = device.components?.some(c => 
+      c.capabilities?.some(cap => cap.id === 'switch')
+    );
+    
+    // Get device icon based on type
+    const icon = this.getDeviceIcon(device);
+    
+    card.innerHTML = `
+      <div class="device-card__icon">${icon}</div>
+      <div class="device-card__info">
+        <div class="device-card__name">${device.label || device.name}</div>
+        <div class="device-card__status ${isOn ? 'device-card__status--on' : ''}">
+          ${this.getStatusText(device)}
+        </div>
+      </div>
+      ${hasSwitch ? `
+        <div class="toggle ${isOn ? 'toggle--on' : ''}" data-device-id="${device.deviceId}">
+          <div class="toggle__knob"></div>
+        </div>
+      ` : ''}
     `;
-  }
-  
-  card.innerHTML = `
-    <div class="device-card__icon">${deviceType.icon}</div>
-    <div class="device-card__info">
-      <div class="device-card__name">${device.label || device.name}</div>
-      <div class="device-card__status">${formatDeviceStatus(deviceType, deviceStatus)}</div>
-    </div>
-    <div class="device-card__controls">${controlsHTML}</div>
-  `;
-  
-  // Add brightness slider for dimmers/lights
-  if (deviceType.controls.includes('brightness') && deviceStatus.isOn) {
-    const sliderContainer = document.createElement('div');
-    sliderContainer.className = 'slider-container';
-    sliderContainer.innerHTML = `
-      <span class="slider-container__icon">🔅</span>
-      <input type="range" class="slider" min="0" max="100" value="${deviceStatus.level || 0}"
-             data-device-id="${device.deviceId}">
-      <span class="slider__value">${deviceStatus.level || 0}%</span>
-      <span class="slider-container__icon">🔆</span>
-    `;
-    card.appendChild(sliderContainer);
-  }
-  
-  elements.devicesList.appendChild(card);
-  
-  // Add event listeners
-  const toggle = card.querySelector('.toggle');
-  if (toggle) {
-    toggle.addEventListener('click', () => toggleDevice(device.deviceId, toggle));
-  }
-  
-  const slider = card.querySelector('.slider');
-  if (slider) {
-    slider.addEventListener('input', (e) => {
-      e.target.nextElementSibling.textContent = `${e.target.value}%`;
-    });
-    slider.addEventListener('change', (e) => {
-      setDeviceLevel(device.deviceId, parseInt(e.target.value));
-    });
-  }
-}
-
-function formatDeviceStatus(deviceType, status) {
-  if (status.temperature !== undefined) {
-    return `${status.temperature}°${status.unit || 'C'}`;
-  }
-  if (status.humidity !== undefined) {
-    return `${status.humidity}% humidity`;
-  }
-  if (status.motion !== undefined) {
-    return status.motion ? 'Motion detected' : 'No motion';
-  }
-  if (status.isOpen !== undefined) {
-    return status.isOpen ? 'Open' : 'Closed';
-  }
-  if (status.isLocked !== undefined) {
-    return status.isLocked ? 'Locked' : 'Unlocked';
-  }
-  if (status.level !== undefined && status.isOn) {
-    return `${status.level}% brightness`;
-  }
-  if (status.isOn !== undefined) {
-    return status.isOn ? 'On' : 'Off';
-  }
-  return deviceType.label;
-}
-
-function getDeviceType(device) {
-  const capabilities = device.components?.flatMap(c => c.capabilities?.map(cap => cap.id)) || [];
-  
-  // Determine device type based on capabilities
-  if (capabilities.includes('colorControl')) {
-    return DEVICE_TYPES.light;
-  }
-  if (capabilities.includes('switchLevel') && capabilities.includes('switch')) {
-    return DEVICE_TYPES.dimmer;
-  }
-  if (capabilities.includes('thermostatMode')) {
-    return DEVICE_TYPES.thermostat;
-  }
-  if (capabilities.includes('lock')) {
-    return DEVICE_TYPES.lock;
-  }
-  if (capabilities.includes('motionSensor')) {
-    return DEVICE_TYPES.motionSensor;
-  }
-  if (capabilities.includes('contactSensor')) {
-    return DEVICE_TYPES.contactSensor;
-  }
-  if (capabilities.includes('relativeHumidityMeasurement')) {
-    return DEVICE_TYPES.humiditySensor;
-  }
-  if (capabilities.includes('temperatureMeasurement')) {
-    return DEVICE_TYPES.temperatureSensor;
-  }
-  if (capabilities.includes('switch')) {
-    return DEVICE_TYPES.switch;
-  }
-  
-  // Default fallback
-  return {
-    icon: '📱',
-    label: 'Device',
-    capabilities: [],
-    controls: [],
-    getStatus: () => ({})
-  };
-}
-
-// Device type definitions (mirrored from backend for client-side use)
-const DEVICE_TYPES = {
-  switch: {
-    icon: '💡',
-    label: 'Switch',
-    controls: ['toggle'],
-    getStatus: (status) => ({
-      isOn: status?.components?.main?.switch?.switch?.value === 'on'
-    })
-  },
-  light: {
-    icon: '💡',
-    label: 'Light',
-    controls: ['toggle', 'brightness', 'color'],
-    getStatus: (status) => ({
-      isOn: status?.components?.main?.switch?.switch?.value === 'on',
-      level: status?.components?.main?.switchLevel?.level?.value || 0
-    })
-  },
-  dimmer: {
-    icon: '🔆',
-    label: 'Dimmer',
-    controls: ['toggle', 'brightness'],
-    getStatus: (status) => ({
-      isOn: status?.components?.main?.switch?.switch?.value === 'on',
-      level: status?.components?.main?.switchLevel?.level?.value || 0
-    })
-  },
-  thermostat: {
-    icon: '🌡️',
-    label: 'Thermostat',
-    controls: ['mode', 'temperature'],
-    getStatus: (status) => ({
-      temperature: status?.components?.main?.temperatureMeasurement?.temperature?.value
-    })
-  },
-  lock: {
-    icon: '🔒',
-    label: 'Lock',
-    controls: ['toggle'],
-    getStatus: (status) => ({
-      isLocked: status?.components?.main?.lock?.lock?.value === 'locked'
-    })
-  },
-  motionSensor: {
-    icon: '👁️',
-    label: 'Motion Sensor',
-    controls: [],
-    getStatus: (status) => ({
-      motion: status?.components?.main?.motionSensor?.motion?.value === 'active'
-    })
-  },
-  contactSensor: {
-    icon: '🚪',
-    label: 'Contact Sensor',
-    controls: [],
-    getStatus: (status) => ({
-      isOpen: status?.components?.main?.contactSensor?.contact?.value === 'open'
-    })
-  },
-  temperatureSensor: {
-    icon: '🌡️',
-    label: 'Temperature Sensor',
-    controls: [],
-    getStatus: (status) => ({
-      temperature: status?.components?.main?.temperatureMeasurement?.temperature?.value,
-      unit: status?.components?.main?.temperatureMeasurement?.temperature?.unit || 'C'
-    })
-  },
-  humiditySensor: {
-    icon: '💧',
-    label: 'Humidity Sensor',
-    controls: [],
-    getStatus: (status) => ({
-      humidity: status?.components?.main?.relativeHumidityMeasurement?.humidity?.value
-    })
-  }
-};
-
-// ========== Device Commands ==========
-async function toggleDevice(deviceId, toggleElement) {
-  const isOn = toggleElement.classList.contains('toggle--on');
-  const capability = toggleElement.dataset.capability;
-  
-  try {
-    if (capability === 'lock') {
-      await window.smartliving.executeCommand(deviceId, 'lock', isOn ? 'unlock' : 'lock');
-    } else {
-      await window.smartliving.executeCommand(deviceId, 'switch', isOn ? 'off' : 'on');
+    
+    // Add brightness slider for dimmable lights
+    if (level !== undefined) {
+      const slider = document.createElement('div');
+      slider.className = 'brightness-slider';
+      slider.innerHTML = `<div class="brightness-slider__fill" style="width: ${level}%"></div>`;
+      card.querySelector('.device-card__info').appendChild(slider);
     }
     
-    toggleElement.classList.toggle('toggle--on');
-    
-    // Update status text
-    const card = toggleElement.closest('.device-card');
-    const statusEl = card.querySelector('.device-card__status');
-    if (capability === 'lock') {
-      statusEl.textContent = isOn ? 'Unlocked' : 'Locked';
-    } else {
-      statusEl.textContent = isOn ? 'Off' : 'On';
-    }
-  } catch (error) {
-    console.error('Failed to toggle device:', error);
-    showToast('Failed to control device', 'error');
-  }
-}
-
-async function setDeviceLevel(deviceId, level) {
-  try {
-    await window.smartliving.executeCommand(deviceId, 'switchLevel', 'setLevel', [level]);
-  } catch (error) {
-    console.error('Failed to set device level:', error);
-    showToast('Failed to set brightness', 'error');
-  }
-}
-
-// ========== Scenes ==========
-async function loadScenes() {
-  elements.scenesList.innerHTML = '<div class="loading"><div class="loading__spinner"></div><p>Loading scenes...</p></div>';
-  
-  try {
-    const scenes = await window.smartliving.getScenes();
-    state.scenes = scenes;
-    
-    elements.scenesList.innerHTML = '';
-    
-    if (scenes.length === 0) {
-      elements.scenesList.innerHTML = '<div class="empty"><p>No scenes found</p></div>';
-      return;
+    // Toggle event
+    const toggle = card.querySelector('.toggle');
+    if (toggle) {
+      toggle.addEventListener('click', (e) => {
+        e.stopPropagation();
+        this.toggleDevice(device.deviceId, !isOn);
+      });
     }
     
-    scenes.forEach(scene => {
-      const card = document.createElement('div');
-      card.className = 'scene-card';
-      card.dataset.sceneId = scene.sceneId;
-      card.innerHTML = `
-        <div class="scene-card__icon">🎬</div>
-        <div class="scene-card__name">${scene.sceneName}</div>
-        <div class="scene-card__arrow">▶</div>
+    return card;
+  }
+
+  getDeviceIcon(device) {
+    const capabilities = device.components?.flatMap(c => 
+      c.capabilities?.map(cap => cap.id)
+    ) || [];
+    
+    if (capabilities.includes('colorControl')) return '💡';
+    if (capabilities.includes('switchLevel')) return '🔆';
+    if (capabilities.includes('thermostatMode')) return '🌡️';
+    if (capabilities.includes('lock')) return '🔒';
+    if (capabilities.includes('motionSensor')) return '👁️';
+    if (capabilities.includes('contactSensor')) return '🚪';
+    if (capabilities.includes('switch')) return '⚡';
+    return '📱';
+  }
+
+  getStatusText(device) {
+    const isOn = device.status?.components?.main?.switch?.switch?.value === 'on';
+    const level = device.status?.components?.main?.switchLevel?.level?.value;
+    const temp = device.status?.components?.main?.temperatureMeasurement?.temperature?.value;
+    
+    if (temp !== undefined) return `${temp}°`;
+    if (level !== undefined) return isOn ? `${level}%` : 'Off';
+    if (isOn !== undefined) return isOn ? 'On' : 'Off';
+    return 'Unknown';
+  }
+
+  async toggleDevice(deviceId, state) {
+    try {
+      await window.smartliving.executeCommand(
+        deviceId,
+        'switch',
+        state ? 'on' : 'off',
+        []
+      );
+      
+      // Update UI immediately
+      const toggle = document.querySelector(`[data-device-id="${deviceId}"].toggle`);
+      if (toggle) {
+        toggle.classList.toggle('toggle--on', state);
+      }
+      
+      // Update status text
+      const card = document.querySelector(`.device-card[data-device-id="${deviceId}"]`);
+      if (card) {
+        const status = card.querySelector('.device-card__status');
+        status.classList.toggle('device-card__status--on', state);
+        status.textContent = state ? 'On' : 'Off';
+      }
+    } catch (error) {
+      console.error('Failed to toggle device:', error);
+      this.showError('Failed to control device');
+    }
+  }
+
+  async loadScenes() {
+    try {
+      this.scenes = await window.smartliving.getScenes();
+      this.renderScenes();
+    } catch (error) {
+      console.error('Failed to load scenes:', error);
+    }
+  }
+
+  renderScenes() {
+    this.scenesList.innerHTML = '';
+    
+    for (const scene of this.scenes) {
+      const btn = document.createElement('button');
+      btn.className = 'scene-btn';
+      btn.innerHTML = `
+        <span class="scene-btn__icon">🎬</span>
+        <span>${scene.sceneName}</span>
       `;
       
-      card.addEventListener('click', () => executeScene(scene.sceneId, card));
-      elements.scenesList.appendChild(card);
-    });
-  } catch (error) {
-    console.error('Failed to load scenes:', error);
-    elements.scenesList.innerHTML = '<div class="empty"><p>Failed to load scenes</p></div>';
+      btn.addEventListener('click', () => this.executeScene(scene.sceneId));
+      this.scenesList.appendChild(btn);
+    }
+  }
+
+  async executeScene(sceneId) {
+    try {
+      await window.smartliving.executeScene(sceneId);
+      // Refresh devices to show new states
+      setTimeout(() => this.loadDevices(), 1000);
+    } catch (error) {
+      console.error('Failed to execute scene:', error);
+      this.showError('Failed to run scene');
+    }
+  }
+
+  showError(message) {
+    // Simple error display (could be improved with toast notifications)
+    console.error(message);
   }
 }
 
-async function executeScene(sceneId, cardElement) {
-  cardElement.classList.add('scene-card--executing');
-  
-  try {
-    await window.smartliving.executeScene(sceneId);
-    showToast('Scene activated!', 'success');
-  } catch (error) {
-    console.error('Failed to execute scene:', error);
-    showToast('Failed to activate scene', 'error');
-  } finally {
-    cardElement.classList.remove('scene-card--executing');
-  }
-}
-
-// ========== Toast Notifications ==========
-function showToast(message, type = 'info') {
-  // Remove existing toast
-  const existing = document.querySelector('.toast');
-  if (existing) existing.remove();
-  
-  const toast = document.createElement('div');
-  toast.className = `toast toast--${type}`;
-  toast.textContent = message;
-  document.body.appendChild(toast);
-  
-  // Trigger animation
-  requestAnimationFrame(() => {
-    toast.classList.add('toast--visible');
-  });
-  
-  // Auto-hide after 3s
-  setTimeout(() => {
-    toast.classList.remove('toast--visible');
-    setTimeout(() => toast.remove(), 300);
-  }, 3000);
-}
-
-// ========== Start Application ==========
-document.addEventListener('DOMContentLoaded', init);
+// Initialize app when DOM is ready
+document.addEventListener('DOMContentLoaded', () => {
+  window.app = new SmartLivingApp();
+});

@@ -24,6 +24,17 @@ yarn-error.log*
 *.swo
 *~
 
+
+# Credentials
+*.pem
+*.key
+secrets.json
+credentials.json
+key.json
+token.json
+.dumb
+*.p12
+
 # OS files
 .DS_Store
 Thumbs.db
