@@ -27,7 +27,7 @@ class AppTray {
   }
 
   setupListeners() {
-    this.tray.on('click', (event, bounds) => {
+    this.tray.on('click', (_event, bounds) => {
       this.toggleWindow(bounds);
     });
 
@@ -36,7 +36,7 @@ class AppTray {
     });
     
     // Support drag-and-drop actions in the future?
-    this.tray.on('drop-files', (event, files) => {
+    this.tray.on('drop-files', () => {
       // Future feature
     });
   }
@@ -46,7 +46,7 @@ class AppTray {
       this.mainWindow.hide();
     } else {
       const { x, y } = bounds;
-      const { width, height } = this.mainWindow.getBounds();
+      const { width } = this.mainWindow.getBounds();
       // Center window below the tray icon
       const posX = Math.round(x - width / 2);
       const posY = Math.round(y + 4); // Small padding

@@ -323,6 +323,7 @@ body {
 
 .slider {
   -webkit-appearance: none;
+  appearance: none;
   flex: 1;
   height: 4px;
   background: rgba(255, 255, 255, 0.2);
@@ -565,6 +566,93 @@ body {
   text-decoration: underline;
 }
 
+/* ========== Thermostat Controls ========== */
+.thermostat-controls {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  width: 100%;
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--border);
+}
+
+.mode-selector {
+  display: flex;
+  gap: var(--space-xs);
+  background: var(--bg-tertiary);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+}
+
+.mode-btn {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 11px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.mode-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mode-btn--active {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  box-shadow: 0 1px 2px var(--shadow);
+}
+
+.mode-btn--cool.mode-btn--active { color: #5ac8fa; }
+.mode-btn--heat.mode-btn--active { color: #ff3b30; }
+.mode-btn--eco.mode-btn--active { color: #30d158; }
+
+.temp-slider-container {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 0 var(--space-xs);
+}
+
+.temp-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  flex: 1;
+  height: 4px;
+  background: var(--bg-tertiary);
+  border-radius: 2px;
+  outline: none;
+}
+
+.temp-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 16px;
+  height: 16px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  cursor: pointer;
+  box-shadow: 0 1px 3px var(--shadow);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+
+.temp-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  background: var(--text-primary);
+}
+
+.temp-value {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-primary);
+  min-width: 32px;
+  text-align: right;
+}
+
 /* ========== Scrollbar ========== */
 ::-webkit-scrollbar {
   width: 8px;
@@ -627,4 +715,229 @@ body {
 
 .toast--error {
   border-color: var(--danger);
+}
+
+/* ========== Fan & Swing Controls ========== */
+.fan-control {
+  margin-top: 4px;
+}
+
+.fan-select {
+  width: 100%;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11px;
+  outline: none;
+}
+
+.swing-btn {
+  width: 100%;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.swing-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.swing-btn--active {
+  background: var(--bg-secondary);
+  color: var(--accent);
+}
+
+/* ========== Collapsible Controls ========== */
+.device-controls-wrapper {
+  margin-top: var(--space-sm);
+  overflow: hidden;
+  max-height: 500px;
+  transition: max-height var(--transition-normal);
+}
+
+.device-controls-wrapper.hidden {
+  max-height: 0;
+  margin-top: 0;
+  border: none;
+  padding: 0;
+}
+
+.device-card--expanded {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+}
+
+/* ========== Generic Action Button (WindFree) ========== */
+.action-btn {
+  width: 100%;
+  margin-top: 4px;
+  padding: 4px 8px;
+  background: var(--bg-tertiary);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.action-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-primary);
+}
+
+.action-btn--active {
+  background: var(--bg-secondary);
+  color: #a3c7ff; /* Light blue often associates with wind/air */
+  box-shadow: inset 0 0 4px rgba(0, 122, 255, 0.2);
+}
+
+/* Consumption Graph Styles */
+.consumption-graph-wrapper {
+  margin-top: 16px;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 12px;
+  // height: 250px; /* Let it grow */
+}
+
+.graph-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 8px;
+}
+
+.graph-stats {
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 12px;
+  font-size: 0.9em;
+  color: var(--text-secondary);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 1.2em;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.power-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 8px;
+  padding: 8px 12px;
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto; /* Push to right if in flex container */
+}
+
+.power-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.power-btn--active {
+  background: var(--accent-color);
+  color: white;
+}
+
+/* Category Headers */
+.category-header {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 1.5rem 0 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-header:first-child {
+  margin-top: 0;
+}
+
+/* Settings Groups */
+.setting-group {
+  margin-top: 1.5rem;
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1rem;
+}
+
+.setting-group__title {
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin-bottom: 1rem;
+}
+
+.setting-group__content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+/* Toggle Checkboxes */
+.category-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  cursor: pointer;
+}
+
+.category-toggle__label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-primary);
+}
+
+.category-toggle input[type="checkbox"] {
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 4px;
+  border: 2px solid var(--text-secondary);
+  appearance: none;
+  background: transparent;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.category-toggle input[type="checkbox"]:checked {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.category-toggle input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  color: white;
+  font-size: 0.8rem;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }

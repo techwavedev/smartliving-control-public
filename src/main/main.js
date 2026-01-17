@@ -18,7 +18,7 @@ let appTray = null;
 
 // Prevent multiple instances
 const gotTheLock = app.requestSingleInstanceLock();
-if (!gotTheLock) {
+if (!gotTheLock && process.env.NODE_ENV !== 'test') {
   app.quit();
 }
 
@@ -44,9 +44,11 @@ function createWindow() {
 
   // Hide window when it loses focus
   mainWindow.on('blur', () => {
-    // Keep window open if dev tools are focused
-    if (!mainWindow.webContents.isDevToolsOpened()) {
-      mainWindow.hide();
+    if (process.env.NODE_ENV !== 'test') {
+      // Keep window open if dev tools are focused
+      if (!mainWindow.webContents.isDevToolsOpened()) {
+        mainWindow.hide();
+      }
     }
   });
 

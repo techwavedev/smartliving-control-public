@@ -25,6 +25,12 @@ test.describe('SmartLiving Control App', () => {
     // Get the first window
     window = await app.firstWindow();
     
+    // Force show the window (since it starts hidden as a tray app)
+    await app.evaluate(async ({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      if (win) win.show();
+    });
+    
     // Wait for the app to be ready
     await window.waitForLoadState('domcontentloaded');
   });
@@ -121,6 +127,13 @@ test.describe('Tab Navigation', () => {
       }
     });
     window = await app.firstWindow();
+
+    // Force show the window
+    await app.evaluate(async ({ BrowserWindow }) => {
+      const win = BrowserWindow.getAllWindows()[0];
+      if (win) win.show();
+    });
+
     await window.waitForLoadState('domcontentloaded');
   });
 

@@ -25,3 +25,10 @@ contextBridge.exposeInMainWorld('smartliving', {
   onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page)),
   onQuickAction: (callback) => ipcRenderer.on('quick-action', (event, deviceId) => callback(deviceId))
 });
+
+// Expose Device Types
+const { DEVICE_TYPES, getDeviceType } = require('../services/deviceTypes');
+contextBridge.exposeInMainWorld('DeviceTypes', {
+  DEVICE_TYPES,
+  getDeviceType
+});

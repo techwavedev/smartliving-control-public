@@ -8,10 +8,25 @@ const SMARTTHINGS_API_BASE = 'https://api.smartthings.com/v1';
 class SmartThingsService {
   constructor(token) {
     this.token = token;
+    // Cache storage
+    this.devicesCache = { data: null, timestamp: 0 };
+    this.statusCache = new Map(); // Map<deviceId, { data: object, timestamp: number }>
+    
+    // Cache configuration
+    this.CACHE_TTL = {
+      DEVICES: 10 * 60 * 1000, // 10 minutes
+      STATUS: 1 * 60 * 1000    // 1 minute
+    };
   }
 
   setToken(token) {
     this.token = token;
+    this.clearCache();
+  }
+
+  clearCache() {
+    this.devicesCache = { data: null, timestamp: 0 };
+    this.statusCache.clear();
   }
 
   async request(endpoint, options = {}) {
@@ -46,17 +61,46 @@ class SmartThingsService {
 
   // ========== Devices ==========
 
-  async getDevices() {
+  async getDevices(forceRefresh = false) {
+    const now = Date.now();
+    const isCacheValid = this.devicesCache.data && (now - this.devicesCache.timestamp < this.CACHE_TTL.DEVICES);
+
+    if (!forceRefresh && isCacheValid) {
+      return this.devicesCache.data || [];
+    }
+
     const data = await this.request('/devices');
-    return data.items || [];
+    const devices = data.items || [];
+    
+    this.devicesCache = {
+      data: devices,
+      timestamp: now
+    };
+    
+    return devices;
   }
 
   async getDevice(deviceId) {
     return this.request(`/devices/${deviceId}`);
   }
 
-  async getDeviceStatus(deviceId) {
-    return this.request(`/devices/${deviceId}/status`);
+  async getDeviceStatus(deviceId, forceRefresh = false) {
+    const now = Date.now();
+    const cached = this.statusCache.get(deviceId);
+    const isCacheValid = cached && (now - cached.timestamp < this.CACHE_TTL.STATUS);
+
+    if (!forceRefresh && isCacheValid) {
+      return cached.data;
+    }
+
+    const status = await this.request(`/devices/${deviceId}/status`);
+    
+    this.statusCache.set(deviceId, {
+      data: status,
+      timestamp: now
+    });
+
+    return status;
   }
 
   async getDeviceHealth(deviceId) {
@@ -64,6 +108,9 @@ class SmartThingsService {
   }
 
   async executeCommand(deviceId, capability, command, args = []) {
+    // Invalidate cache for this device immediately
+    this.statusCache.delete(deviceId);
+
     return this.request(`/devices/${deviceId}/commands`, {
       method: 'POST',
       body: JSON.stringify({

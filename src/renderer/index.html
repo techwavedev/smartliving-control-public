@@ -99,6 +99,13 @@
               </label>
             </div>
 
+            <div class="setting-group" id="category-settings">
+              <h3 class="setting-group__title">Visible Categories</h3>
+              <div id="category-toggles" class="setting-group__content">
+                <!-- Category toggles loaded dynamically -->
+              </div>
+            </div>
+
             <div class="setting">
               <button id="refresh-devices" class="btn btn--secondary">
                 Refresh Devices
@@ -114,6 +121,8 @@
       </main>
     </div>
 
+    <script src="../services/deviceTypes.js"></script>
+    <script src="chart.min.js"></script>
     <script src="app.js"></script>
   </body>
 </html>

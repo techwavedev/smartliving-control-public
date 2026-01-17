@@ -4,7 +4,22 @@
  */
 
 const DEVICE_TYPES = {
+  tv: {
+    type: 'tv',
+    icon: '📺',
+    label: 'TV',
+    capabilities: ['switch', 'audioVolume', 'mediaPlayback', 'mediaInputSource'],
+    controls: ['toggle', 'volume', 'media'],
+    getStatus: (status) => ({
+      isOn: status?.components?.main?.switch?.switch?.value === 'on',
+      volume: status?.components?.main?.audioVolume?.volume?.value,
+      mute: status?.components?.main?.audioVolume?.mute?.value === 'muted',
+      input: status?.components?.main?.mediaInputSource?.inputSource?.value
+    })
+  },
+
   switch: {
+    type: 'switch',
     icon: '💡',
     label: 'Switch',
     capabilities: ['switch'],
@@ -15,6 +30,7 @@ const DEVICE_TYPES = {
   },
 
   light: {
+    type: 'light',
     icon: '💡',
     label: 'Light',
     capabilities: ['switch', 'switchLevel', 'colorControl', 'colorTemperature'],
@@ -29,6 +45,7 @@ const DEVICE_TYPES = {
   },
 
   dimmer: {
+    type: 'dimmer',
     icon: '🔆',
     label: 'Dimmer',
     capabilities: ['switch', 'switchLevel'],
@@ -40,6 +57,7 @@ const DEVICE_TYPES = {
   },
 
   thermostat: {
+    type: 'thermostat',
     icon: '🌡️',
     label: 'Thermostat',
     capabilities: ['thermostatMode', 'thermostatHeatingSetpoint', 'thermostatCoolingSetpoint', 'temperatureMeasurement'],
@@ -53,6 +71,7 @@ const DEVICE_TYPES = {
   },
 
   lock: {
+    type: 'lock',
     icon: '🔒',
     label: 'Lock',
     capabilities: ['lock'],
@@ -63,6 +82,7 @@ const DEVICE_TYPES = {
   },
 
   motionSensor: {
+    type: 'motionSensor',
     icon: '👁️',
     label: 'Motion Sensor',
     capabilities: ['motionSensor'],
@@ -73,6 +93,7 @@ const DEVICE_TYPES = {
   },
 
   contactSensor: {
+    type: 'contactSensor',
     icon: '🚪',
     label: 'Contact Sensor',
     capabilities: ['contactSensor'],
@@ -83,6 +104,7 @@ const DEVICE_TYPES = {
   },
 
   temperatureSensor: {
+    type: 'temperatureSensor',
     icon: '🌡️',
     label: 'Temperature Sensor',
     capabilities: ['temperatureMeasurement'],
@@ -94,6 +116,7 @@ const DEVICE_TYPES = {
   },
 
   humiditySensor: {
+    type: 'humiditySensor',
     icon: '💧',
     label: 'Humidity Sensor',
     capabilities: ['relativeHumidityMeasurement'],
@@ -101,6 +124,49 @@ const DEVICE_TYPES = {
     getStatus: (status) => ({
       humidity: status?.components?.main?.relativeHumidityMeasurement?.humidity?.value
     })
+  },
+
+  airConditioner: {
+    type: 'airConditioner',
+    icon: '❄️',
+    label: 'Air Conditioner',
+    capabilities: ['switch', 'airConditionerMode', 'airConditionerFanMode', 'fanSpeed', 'fanOscillationMode', 'temperatureMeasurement', 'thermostatCoolingSetpoint', 'custom.airConditionerOptionalMode', 'samsungce.airConditionerLighting', 'samsungce.autoCleaningMode', 'custom.spiMode'],
+    controls: ['toggle', 'mode', 'fanSpeed', 'swing', 'windFree', 'temperature', 'advanced'],
+    getStatus: (status) => ({
+      isOn: status?.components?.main?.switch?.switch?.value === 'on',
+      mode: status?.components?.main?.airConditionerMode?.airConditionerMode?.value,
+      fanSpeed: status?.components?.main?.fanSpeed?.fanSpeed?.value, // Some use fanSpeed capability
+      fanMode: status?.components?.main?.airConditionerFanMode?.fanMode?.value, // Some use airConditionerFanMode
+      swing: status?.components?.main?.fanOscillationMode?.fanOscillationMode?.value,
+      windFree: status?.components?.main?.['custom.airConditionerOptionalMode']?.acOptionalMode?.value,
+      temperature: status?.components?.main?.temperatureMeasurement?.temperature?.value,
+      coolingSetpoint: status?.components?.main?.thermostatCoolingSetpoint?.coolingSetpoint?.value,
+      lighting: status?.components?.main?.['samsungce.airConditionerLighting']?.lighting?.value,
+      autoClean: status?.components?.main?.['samsungce.autoCleaningMode']?.autoCleaningMode?.value,
+      spiMode: status?.components?.main?.['custom.spiMode']?.spiMode?.value
+    })
+  },
+
+  outlet: {
+    type: 'outlet',
+    icon: '🔌',
+    label: 'Outlet',
+    capabilities: ['switch', 'powerMeter', 'energyMeter'],
+    controls: ['toggle', 'power'],
+    getStatus: (status) => ({
+      isOn: status?.components?.main?.switch?.switch?.value === 'on',
+      power: status?.components?.main?.powerMeter?.power?.value,
+      energy: status?.components?.main?.energyMeter?.energy?.value
+    })
+  },
+
+  other: {
+    type: 'other',
+    icon: '❓',
+    label: 'Other',
+    capabilities: [],
+    controls: [],
+    getStatus: () => ({})
   }
 };
 
@@ -111,6 +177,15 @@ function getDeviceType(device) {
   const capabilities = device.components?.flatMap(c => c.capabilities?.map(cap => cap.id)) || [];
 
   // Check for specific device types (order matters - more specific first)
+  if (capabilities.includes('powerMeter') && capabilities.includes('switch')) {
+    return DEVICE_TYPES.outlet;
+  }
+  if (capabilities.includes('airConditionerMode')) {
+    return DEVICE_TYPES.airConditioner;
+  }
+  if (capabilities.includes('audioVolume') || capabilities.includes('mediaPlayback')) {
+    return DEVICE_TYPES.tv;
+  }
   if (capabilities.includes('colorControl')) {
     return DEVICE_TYPES.light;
   }
@@ -140,16 +215,12 @@ function getDeviceType(device) {
   }
 
   // Default fallback
-  return {
-    icon: '📱',
-    label: 'Device',
-    capabilities: [],
-    controls: [],
-    getStatus: () => ({})
-  };
+  return DEVICE_TYPES.other;
 }
 
-module.exports = {
-  DEVICE_TYPES,
-  getDeviceType
-};
+// Export for both Node.js and Browser
+if (typeof module !== 'undefined' && module.exports) {
+  module.exports = { DEVICE_TYPES, getDeviceType };
+} else {
+  window.DeviceTypes = { DEVICE_TYPES, getDeviceType };
+}
