@@ -86,7 +86,7 @@ class SmartLivingApp {
     // External link
     this.tokenLink.addEventListener('click', (e) => {
       e.preventDefault();
-      require('electron').shell.openExternal('https://account.smartthings.com/tokens');
+      window.smartliving.openExternal('https://account.smartthings.com/tokens');
     });
   }
 

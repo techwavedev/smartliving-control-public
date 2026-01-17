@@ -19,5 +19,8 @@ contextBridge.exposeInMainWorld('smartliving', {
   executeScene: (sceneId) => ipcRenderer.invoke('smartthings:execute-scene', sceneId),
   
   // Navigation events
-  onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page))
+  onNavigate: (callback) => ipcRenderer.on('navigate', (event, page) => callback(page)),
+  
+  // External links
+  openExternal: (url) => ipcRenderer.invoke('open-external', url)
 });

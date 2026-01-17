@@ -106,6 +106,15 @@ function openPreferences() {
 ipcMain.handle("get-settings", () => store.store);
 ipcMain.handle("set-setting", (event, key, value) => {
   store.set(key, value);
+  
+  // Handle startup setting
+  if (key === "showOnStartup" && process.platform === "darwin") {
+    app.setLoginItemSettings({
+      openAtLogin: value,
+      openAsHidden: true,
+    });
+  }
+  
   return true;
 });
 
@@ -116,26 +125,40 @@ ipcMain.handle("set-token", (event, token) => {
   return true;
 });
 
+// IPC Handler - External Links
+ipcMain.handle("open-external", (event, url) => {
+  const allowedHosts = ["account.smartthings.com", "smartthings.com"];
+  try {
+    const urlObj = new URL(url);
+    if (allowedHosts.some(host => urlObj.hostname.endsWith(host))) {
+      shell.openExternal(url);
+      return true;
+    }
+  } catch (e) {
+    console.error("Invalid URL:", url);
+  }
+  return false;
+});
+
 // SmartThings API IPC Handlers
 ipcMain.handle("smartthings:get-devices", async () => {
-  smartThingsService.setToken(store.get("smartthingsToken"));
   return smartThingsService.getDevices();
 });
 
 ipcMain.handle("smartthings:get-status", async (event, deviceId) => {
-  return smartthings.getDeviceStatus(deviceId);
+  return smartThingsService.getDeviceStatus(deviceId);
 });
 
 ipcMain.handle("smartthings:execute-command", async (event, deviceId, capability, command, args) => {
-  return smartthings.executeCommand(deviceId, capability, command, args);
+  return smartThingsService.executeCommand(deviceId, capability, command, args);
 });
 
 ipcMain.handle("smartthings:get-scenes", async () => {
-  return smartthings.getScenes();
+  return smartThingsService.getScenes();
 });
 
 ipcMain.handle("smartthings:execute-scene", async (event, sceneId) => {
-  return smartthings.executeScene(sceneId);
+  return smartThingsService.executeScene(sceneId);
 });
 
 // App lifecycle
