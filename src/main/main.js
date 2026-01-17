@@ -5,9 +5,11 @@ const {
   Menu,
   nativeImage,
   ipcMain,
+  shell,
 } = require("electron");
 const path = require("path");
 const Store = require("electron-store");
+const SmartThingsService = require("../services/smartthings");
 
 // Initialize settings store
 const store = new Store({
@@ -17,6 +19,9 @@ const store = new Store({
     favoriteDevices: [],
   },
 });
+
+// Initialize SmartThings service
+let smartThingsService = new SmartThingsService(store.get("smartthingsToken"));
 
 let mainWindow = null;
 let tray = null;
@@ -107,7 +112,30 @@ ipcMain.handle("set-setting", (event, key, value) => {
 ipcMain.handle("get-token", () => store.get("smartthingsToken"));
 ipcMain.handle("set-token", (event, token) => {
   store.set("smartthingsToken", token);
+  smartThingsService.setToken(token);
   return true;
+});
+
+// SmartThings API IPC Handlers
+ipcMain.handle("smartthings:get-devices", async () => {
+  smartThingsService.setToken(store.get("smartthingsToken"));
+  return smartThingsService.getDevices();
+});
+
+ipcMain.handle("smartthings:get-status", async (event, deviceId) => {
+  return smartthings.getDeviceStatus(deviceId);
+});
+
+ipcMain.handle("smartthings:execute-command", async (event, deviceId, capability, command, args) => {
+  return smartthings.executeCommand(deviceId, capability, command, args);
+});
+
+ipcMain.handle("smartthings:get-scenes", async () => {
+  return smartthings.getScenes();
+});
+
+ipcMain.handle("smartthings:execute-scene", async (event, sceneId) => {
+  return smartthings.executeScene(sceneId);
 });
 
 // App lifecycle
