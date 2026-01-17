@@ -23,6 +23,23 @@ npm install
 npm run dev
 ```
 
+### Building for Distribution
+
+```bash
+npm run build
+```
+
+This creates distributable files in the `dist/` directory:
+
+- `SmartLiving Control.dmg` - macOS disk image
+- `SmartLiving Control.zip` - Portable ZIP
+
+### Running Tests
+
+```bash
+npm test
+```
+
 ## SmartThings Setup
 
 1. Go to [https://account.smartthings.com/tokens](https://account.smartthings.com/tokens)
